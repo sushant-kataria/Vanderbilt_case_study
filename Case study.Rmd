@@ -1,0 +1,111 @@
+---
+title: "Case Study Question 4"
+author: "Sushant Kataria & Hema Seshan"
+date: "03/06/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Process of analysis:
+###Step 1 - Plan: Stating our Null and Alternative Hypothesis that we would like to test and decide on variables for our Linear Regression Model.
+###Step 2 - Test: Testing our Hypothesis at a prescribed level of significance by building different models and checking their accuracy and assumptions.
+###Step 3 - Conclusion: Stating our results and reflecting on our process of analysis. 
+
+#Step 1: Stating the Hypothesis for multiple Linear Regression:_
+###1. Null hypothesis: The model is linear and all the predictor variables determining the output ‘Actual’ have coefficients zero.i.e. b1=b2=b3=b4......,bn=0.
+###2. Alternate hypothesis: The model is linear with atleast one of the predictor variables determining the output ‘Actual’.i.e. atleast one bi not equal to 0.
+
+#Step 2: a) Building full model using all predictor variables
+###Loading data and creating a FULL MODEL
+```{r}
+library(readxl)
+Vandert<- read_excel("C:/Users/susha/OneDrive/Documents/719/Case study 4/Vanderbilt University Medical Center Elective Surgery Schedule.xlsx", col_types = c("skip", "skip", "numeric", "numeric", "numeric", "numeric","numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric","numeric", "numeric", "numeric","numeric"))
+model_new<-lm(Vandert$Actual~Vandert$`T - 28`+Vandert$`T - 21`+Vandert$`T - 14`+Vandert$`T - 13`+Vandert$`T - 12`+Vandert$`T - 11`+Vandert$`T - 10`+Vandert$`T - 9`+Vandert$`T - 8`+Vandert$`T - 7`+Vandert$`T - 6`+Vandert$`T - 5`+Vandert$`T - 4`+Vandert$`T - 3`+Vandert$`T - 2`+Vandert$`T - 1`,data = Vandert)
+```
+###b)Doing stepwise forward and backward regression on the model to get the best final model.
+```{r}
+library(MASS)
+step<-stepAIC(model_new,direction = "both")
+step$anova
+```
+
+###Stepwise regression selected best model with variables T-7,T-6 and T-1
+```{r}
+bestmodel<-lm(Vandert$Actual ~ Vandert$`T - 7` + Vandert$`T - 6` + Vandert$`T - 1`,data = Vandert)
+summary(bestmodel)
+```
+
+
+###c)Checking our assumptions
+
+###VIF for multicollinearity
+
+```{r}
+library(car)
+vif(bestmodel)
+```
+
+###We remove variable with more than 10 VIF i.e T-7
+```{r}
+bestmodel1<-lm(Vandert$Actual ~ Vandert$`T - 7` + Vandert$`T - 1`,data = Vandert)
+vif(bestmodel1)
+summary(bestmodel1)
+```
+###Currently model with T-6 and T-1 is best in predicting the outcome "Actual".
+###Comparing our full model with new model(where predictor variables are T-6 and T-1
+```{r}
+anova(bestmodel1,bestmodel)
+```
+###our model with T-7,T-6 and T-1 does not lead to a significant fit over the model of T-6 and T-1
+```{r}
+modeldowt1<-lm(Vanderfull$Actual~Vanderfull$DOW+Vanderfull$`T - 1`,data = Vanderfull)
+summary(modeldowt1)
+```
+
+
+###now checking with T-7 and T-1 as our new model and removing T-6 from the full model
+```{r}
+bestmodel2<-lm(Vandert$Actual ~ Vandert$`T - 28`,data = Vandert)
+summary(bestmodel2)
+mse<-mean(residuals(bestmodel2)^2)
+sqrt(mse)
+```
+###The model is significant when we examine the F-statistic and the associated p-value, at the bottom of model summary (as p-value: < 2.2e-16).However T-7 is least significant with p-value 0.137.
+###In multiple linear regression, the R-square depicts the correlation coefficient between the observed values of the outcome variable (y,Actual) and the fitted (i.e., predicted) values of y. For this reason, the value of R will always be positive and will range from zero to one.R-square represents the proportion of variance, in the outcome variable y, that may be predicted by knowing the value of the predictor variables. An R2 value close to 1 indicates that the model explains a large portion of the variance in the outcome variable.
+###Here ,R-square is 93.13%. The adjustment in the “Adjusted R Square” value in the summary output is a correction for the number of x variables included in the prediction model.
+
+
+###this model provides with better adjusted R-square than model that included T-6 and T-1.
+###Also the vif is less in this model.
+###we can compare this model with full model as well
+```{r}
+anova(bestmodel2,bestmodel)
+```
+###our model with T-7,T-6 and T-1 does not lead to a significant fit over the model of T-7 and T-1
+
+###d)Checking for accuracy
+###Calculating residual standard error 
+###The RSE estimate gives a measure of error of prediction. The lower the RSE, the more accurate the model 
+```{r}
+sigma(bestmodel2)/mean(Vandert$Actual)
+```
+###The residual standard error is only 0.3% which is good. 
+###residual plots 
+```{r}
+library(ggfortify)
+autoplot(bestmodel2,label.size = 3) +theme_test()
+```
+
+#Step 4: Conclusion_=
+###1. The predicted model after performing multiple linear regression is:y,Actual=T-7+T-1
+
+###2. The resultant model is good with R2 value = 93.13% 
+###3. The predictor variable T-7 in the model has less significant impact.Taking T-1 alone as single predictor can cause the model to become bias as it is highly correlated to Actual.  
+###4. High correlation: the correlation among the predictor variables were high even though we removed most of the predictor variables. 
+###5. The assumptions for linearity were all met  
+
